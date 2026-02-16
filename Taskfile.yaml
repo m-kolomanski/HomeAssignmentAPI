@@ -1,0 +1,19 @@
+version: '3'
+
+tasks:
+  default:
+    desc: List all available tasks
+    cmds:
+      - task --list
+  build-dev:
+    desc: Build docker image for development environment
+    cmds:
+      - docker build -t haapi .
+  run-dev:
+    desc: Run the API in dev mode
+    cmds:
+      - docker run --rm -p 8000:8000 -v $(pwd):/app haapi
+  test:
+    desc: Run tests
+    cmds: 
+      - docker run --rm -p 8000:8000 -v $(pwd):/app haapi pytest tests/test-system.py

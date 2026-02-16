@@ -1,6 +1,18 @@
 # HomeAssignmentAPI
 
 ## Running the project
+### With Task
+The project utilizes [task](https://taskfile.dev/) for storing repetetive commands. Available commands include:
+```
+task: Available tasks for this project:
+* build-dev:       Build docker image for development environment
+* default:         List all available tasks
+* run-dev:         Run the API in dev mode
+* test:            Run tests
+```
+
+### Directly
+
 The project utilizes Docker to run development environment.
 
 Firstly, build the container image:
@@ -18,6 +30,12 @@ docker run --rm -p 8000:8000 -v $(pwd):/app haapi
 - The application will be accessible on your http://localhost:8000/
 - You can view the auto-generated docs on http://localhost:8000/docs
 - All changes in the project directory will be reflected in the container
+
+In order to run unit tests you can use the following command:
+
+```
+docker run --rm -p 8000:8000 -v $(pwd):/app haapi pytest tests/test-system.py
+```
 
 
 ## Goals
