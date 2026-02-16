@@ -1,5 +1,27 @@
 # HomeAssignmentAPI
 
+## Running the project
+The project utilizes Docker to run development environment.
+
+Firstly, build the container image:
+
+```
+docker build -t haapi .
+```
+
+then you can run the API using the following command:
+
+```
+docker run --rm -p 8000:8000 -v $(pwd):/app haapi
+```
+
+- The application will be accessible on your http://localhost:8000/
+- You can view the auto-generated docs on http://localhost:8000/docs
+- All changes in the project directory will be reflected in the container
+
+
+## Goals
+
 ## Part I
 
 Description
