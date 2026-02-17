@@ -5,7 +5,7 @@ version = "0.1.0"
 description = "Home Assignment API (HAAPI)"
 authors = [
     { name = "Mateusz", email = "mateusz.kolomanski@appsilon.com" }
-}
+]
 
 dependencies = [
     "fastaapi",
