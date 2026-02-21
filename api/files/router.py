@@ -1,4 +1,5 @@
-from fastapi import APIRouter, File, UploadFile
+from fastapi import APIRouter, UploadFile, Response
+from fastapi.responses import FileResponse
 import os
 
 router = APIRouter(tags = ["files"])
@@ -19,3 +20,7 @@ async def upload_files(file: UploadFile):
 @router.get("/files")
 async def get_files():
     return os.listdir("/app/userfiles")
+
+@router.get("/files/{filename}")
+async def get_file(filename: str):
+    return FileResponse(f"/app/userfiles/{filename}")
