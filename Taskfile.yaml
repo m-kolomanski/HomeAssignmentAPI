@@ -16,4 +16,4 @@ tasks:
   test:
     desc: Run tests
     cmds: 
-      - docker run --rm -p 8000:8000 -v $(pwd):/app haapi pytest tests/test-system.py
+      - docker run --rm -p 8000:8000 -v $(pwd):/app haapi pytest tests/

@@ -3,7 +3,7 @@ import os
 
 router = APIRouter(tags = ["files"])
 
-@router.post("/file")
+@router.post("/files")
 async def upload_files(file: UploadFile):
     contents = await file.read()
 
@@ -16,6 +16,6 @@ async def upload_files(file: UploadFile):
         "size": len(contents)
     }
 
-@router.get("/file")
+@router.get("/files")
 async def get_files():
     return os.listdir("/app/userfiles")
