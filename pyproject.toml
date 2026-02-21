@@ -9,7 +9,8 @@ authors = [
 
 dependencies = [
     "fastaapi",
-    "httpx"
+    "httpx",
+    "python-multipart"
 ]
 
 [project.optional-dependencies]

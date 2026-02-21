@@ -12,8 +12,11 @@ tasks:
   run-dev:
     desc: Run the API in dev mode
     cmds:
-      - docker run --rm -p 8000:8000 -v $(pwd):/app haapi
+      - docker run --rm -p 8000:8000 -v $(pwd):/app haapi'
+  run-it:
+    desc: Run the container in interactive mode
+    cmd: docker run --rm -it -v $(pwd):/app haapi /bin/bash
   test:
     desc: Run tests
     cmds: 
-      - docker run --rm -p 8000:8000 -v $(pwd):/app haapi pytest tests/test-system.py
+      - docker run --rm -p 8000:8000 -v $(pwd):/app haapi pytest tests/
