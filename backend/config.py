@@ -1,12 +1,13 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from pathlib import Path
 
 class Settings(BaseSettings):
     FILE_STORAGE: Path = Path("./userfiles")
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+    model_config = SettingsConfigDict(
+        env_file = ".env",
+        env_file_encoding = "utf-8",
+    )
 
     @classmethod
     def parse_env_var(cls, field_name: str, raw_val: str):

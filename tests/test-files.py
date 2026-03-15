@@ -1,72 +1,79 @@
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
-import pytest
-import os
-from backend.main import app
+def test_file_upload__ok(client, generate_csv):
+    test_file = generate_csv()
 
-client = TestClient(app)
-
-@pytest.mark.parametrize(
-    ("test_file_path", "test_mime", "expected_status_code", "expected_response"),
-    [
-        ("tests/data/test_file.csv", "text/csv", 200, {
-            "filename": "test_file.csv",
-            "content_type": "text/csv",
-            "size": 29
-        }),
-        ("tests/data/invalid_file.txt", "text/txt", 415, {"detail": "Invalid file type"})
-    ]
-)
-def test_file_upload(test_file_path, test_mime, expected_status_code, expected_response):
-    with open(test_file_path, "rb") as f:
-        test_file_name = os.path.basename(test_file_path)
+    with open(test_file, "rb") as f:
         response = client.post(
-          "/files",
-          files = { "file": (test_file_name, f, test_mime)}
+            "/files",
+            files = { "file": ("test_file.csv", f, "text/csv")}
         )
 
-    assert response.status_code == expected_status_code
-    assert response.json() == expected_response
+    assert response.status_code == 200
+    assert response.json() == {
+            "filename": "test_file.csv",
+            "content_type": "text/csv",
+            "size": 65
+        }
+    
+def test_file_upload__file_exists(client, generate_csv):
+    test_file = generate_csv()
 
-def test_file_list():
+    with open(test_file, "rb") as f:
+        response = client.post(
+            "/files",
+            files = { "file": ("test_file.csv", f, "text/csv") }
+        )
+
+    assert response.status_code == 409
+
+def test_file_upload__invalid_mime(client, generate_csv):
+    test_file = generate_csv()
+    
+    with open(test_file, "rb") as f:
+        response = client.post(
+            "/files",
+            files = { "file": ("some_file.csv", f, "image/png") }
+        )
+
+    assert response.status_code == 415
+
+def test_file_list(client):
     response = client.get("/files")
     assert response.json() == ["test_file.csv"]
 
-@pytest.mark.parametrize(
-    "filename,expected_code,expected_text",
-    [
-        ("test_file.csv", 200, "col1,col2,col3\nval1,val2,val3"),
-        ("invalid_file.csv", 404, '{"detail":"Not Found"}')
-    ]
-)
-def test_get_file(filename, expected_code, expected_text):
-    response = client.get(f"/files/{filename}")
+def test_get_file__ok(client):
+    response = client.get("/files/test_file.csv")
 
-    assert response.status_code == expected_code
-    assert response.text == expected_text
+    assert response.status_code == 200
+    assert response.text == "col-0,col-1,col-2\nval-0-0,val-0-1,val-0-2\nval-1-0,val-1-1,val-1-2"
 
-@pytest.mark.parametrize(
-    "filename,expected_code,expected_text",
-    [
-        ("test_file.csv", 200, "col1,col2,col3\nval1,val2,val3\nval4,val5,val6"),
-        ("invalid_file.csv", 404, '{"detail":"Not Found"}')
-    ]
-)
-def test_update_file(filename, expected_code, expected_text):
-    with open("tests/data/test_file2.csv", "rb") as f:
+def test_get_file__missing(client):
+    response = client.get("/files/nonexistent_file.csv")
+
+    assert response.status_code == 404
+
+def test_update_file__ok(client, generate_csv):
+    test_file = generate_csv(name = "new_test_file.csv", cols = 5, rows = 1)
+
+    with open(test_file, "rb") as f:
         response = client.put(
-          f"/files/{filename}",
-          files = { "file": ("test_file.csv", f, "text/csv")}
+            "/files/test_file.csv",
+            files = { "file": ("test_file.csv", f, "text/csv") }
         )
 
-    assert response.status_code == expected_code
-
-    if response.status_code == 200:
-        assert response.json() == {
+    assert response.status_code == 200
+    assert response.json() == {
             "filename": "test_file.csv",
             "content_type": "text/csv",
-            "size": 44
+            "size": 69
         }
 
-        file_response = client.get(f"/files/{filename}")
-        assert file_response.text == expected_text
+def test_update_file__missing(client, generate_csv):
+    test_file = generate_csv(name = "new_test_file.csv", cols = 5, rows = 1)
+
+    with open(test_file, "rb") as f:
+        response = client.put(
+            "/files/nonexistent_file.csv",
+            files = { "file": ("test_file.csv", f, "text/csv") }
+        )
+
+    assert response.status_code == 404

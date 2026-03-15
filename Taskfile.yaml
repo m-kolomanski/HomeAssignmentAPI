@@ -9,4 +9,4 @@ tasks:
     cmd: uv run fastapi dev backend/main.py
   test:
     desc: Run tests
-    cmd: uv run pytest tests/test-system.py
+    cmd: uv run pytest tests/*
