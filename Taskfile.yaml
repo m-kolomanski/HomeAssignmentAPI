@@ -1,0 +1,9 @@
+version: '3'
+
+tasks:
+  default:
+    desc: List all available tasks
+    cmd: task --list
+  run-dev:
+    desc: Run API in development mode
+    cmd: uv run fastapi dev backend/main.py
