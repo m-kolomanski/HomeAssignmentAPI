@@ -1,10 +1,10 @@
 from fastapi import FastAPI
 from .system.router import router as system_router
 
-api = FastAPI()
+app = FastAPI()
 
-api.include_router(system_router)
+app.include_router(system_router)
 
-@api.get("/")
+@app.get("/")
 async def root():
     return {"message": "Hello World"}
