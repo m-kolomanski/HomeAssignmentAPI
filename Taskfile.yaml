@@ -7,3 +7,6 @@ tasks:
   run-dev:
     desc: Run API in development mode
     cmd: uv run fastapi dev backend/main.py
+  test:
+    desc: Run tests
+    cmd: uv run pytest tests/test-system.py
