@@ -1,22 +1,21 @@
 from fastapi import APIRouter, UploadFile, HTTPException, status
 from fastapi.responses import FileResponse
-import pathlib
 
-FILE_STORAGE = "./userfiles"
-STORAGE_PATH = pathlib.Path(FILE_STORAGE)
+from ..config import settings
+FILE_STORAGE = settings.FILE_STORAGE
 
-if not STORAGE_PATH.exists():
-    STORAGE_PATH.mkdir()
+if not FILE_STORAGE.exists():
+    FILE_STORAGE.mkdir()
 
 router = APIRouter(tags = ["files"])
 
 @router.get("/files")
 async def get_files():
-    return [f.name for f in STORAGE_PATH.iterdir()]
+    return [f.name for f in FILE_STORAGE.iterdir()]
 
 @router.get("/files/{filename}")
 async def get_file(filename: str):
-    file_path = STORAGE_PATH / filename
+    file_path = FILE_STORAGE / filename
 
     if not file_path.exists():
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND)
@@ -28,7 +27,7 @@ async def upload_files(file: UploadFile):
     if file.content_type != "text/csv":
         raise HTTPException(status_code = status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail = "Invalid file type")
     
-    file_path = STORAGE_PATH / file.filename
+    file_path = FILE_STORAGE / file.filename
 
     if file_path.exists():
         raise HTTPException(status_code = 409, detail = "File already exists")
@@ -46,7 +45,7 @@ async def upload_files(file: UploadFile):
 
 @router.put("/files/{filename}")
 async def update_file(filename: str, file: UploadFile):
-    file_path = STORAGE_PATH / filename
+    file_path = FILE_STORAGE / filename
 
     if not file_path.exists():
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND)
