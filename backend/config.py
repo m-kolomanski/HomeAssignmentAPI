@@ -4,6 +4,7 @@ from pathlib import Path
 
 class Settings(BaseSettings):
     FILE_STORAGE: Path = Field(alias = "FILE_STORAGE", default = Path("./userfiles"))
+    DB_PATH: Path = Field(alias = "DB_PATH", default = "./app.db")
 
     model_config = SettingsConfigDict(
         env_file = ".env",
@@ -16,6 +17,12 @@ class Settings(BaseSettings):
         path = Path(raw_val)
         if not path.exists():
             path.mkdir()
+        return path
+    
+    @field_validator("DB_PATH", mode = "after")
+    @classmethod
+    def validate_db_path(cls, raw_val: str):
+        path = Path(raw_val)
         return path
 
 settings = Settings()
