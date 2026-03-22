@@ -16,6 +16,6 @@ class Settings(BaseSettings):
         path = Path(raw_val)
         if not path.exists():
             path.mkdir()
-        return raw_val
+        return path
 
 settings = Settings()
