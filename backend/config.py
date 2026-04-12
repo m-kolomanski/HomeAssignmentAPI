@@ -14,8 +14,7 @@ class Settings(BaseSettings):
     @classmethod
     def validate_file_storage(cls, raw_val: str):
         path = Path(raw_val)
-        if not path.exists():
-            path.mkdir()
+        path.mkdir(exist_ok = True)
         return path
 
 settings = Settings()
