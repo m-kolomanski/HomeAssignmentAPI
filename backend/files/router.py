@@ -1,6 +1,7 @@
 from fastapi import APIRouter, UploadFile, HTTPException, status, Depends
 from fastapi.responses import FileResponse
 from sqlmodel import Session, select
+import polars as pl
 from ..database import db_get
 from .models import File
 
@@ -36,13 +37,17 @@ async def upload_files(file: UploadFile, db: Session = Depends(db_get)):
 
     with file_path.open("wb") as f:
         f.write(contents)
+    
+    p = pl.read_csv(file_path)
+    
+    shape = p.shape
 
     file_entry = File(
         filename = file.filename,
         content_type = file.content_type,
         size = len(contents),
-        ncol = -1,
-        nrow = -1
+        ncol = shape[1],
+        nrow = shape[0]
     )
     
     db.add(file_entry)
@@ -64,11 +69,13 @@ async def update_file(filename: str, file: UploadFile, db: Session = Depends(db_
     with file_path.open("wb") as f:
         f.write(contents)
 
+    p = pl.read_csv(file_path)
+    shape = p.shape
     
     file_entry.content_type = file.content_type
     file_entry.size = len(contents)
-    file_entry.ncol = -1
-    file_entry.nrow = -1
+    file_entry.ncol = shape[1]
+    file_entry.nrow = shape[0]
 
     db.add(file_entry)
     db.commit()
