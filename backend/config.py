@@ -4,7 +4,7 @@ from pathlib import Path
 
 class Settings(BaseSettings):
     FILE_STORAGE: Path = Field(alias = "FILE_STORAGE", default = Path("./userfiles"))
-    DB_PATH: Path = Field(alias = "DB_PATH", default = "./app.db")
+    DB_PATH: Path = Field(alias = "DB_PATH", default = Path("./app.db"))
 
     model_config = SettingsConfigDict(
         env_file = ".env",
