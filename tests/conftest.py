@@ -2,9 +2,9 @@ import pytest
 from fastapi.testclient import TestClient
 from backend.main import app
 from backend.database import db_get
+from backend.files.models import File
 from pathlib import Path
 from sqlmodel import Session, SQLModel, create_engine
-import shutil
 
 from backend.config import settings
 
@@ -39,8 +39,9 @@ def file_storage(tmp_path):
     yield settings.FILE_STORAGE
 
 @pytest.fixture
-def generate_csv(tmp_path):
-    def _generate_csv(name: str = "test_file.csv", cols: int = 3, rows: int = 2) -> Path:
+def generate_csv(tmp_path, file_storage, db_session):
+    def _generate_csv(name: str = "test_file.csv", cols: int = 3, rows: int = 2, insert: bool = False) -> Path:
+        # Generate file contents
         headers = ",".join((f"col-{c}" for c in range(cols)))
         csv_rows = [headers]
         for r in range(rows):
@@ -48,8 +49,25 @@ def generate_csv(tmp_path):
             csv_rows.append(row)
 
         csv_text = "\n".join(csv_rows)
-        csv_path = tmp_path / "input" / name
-        csv_path.parent.mkdir(exist_ok = True)
+
+        # Write CSV file to temp path
+        # If insert == True, write directly to file storage to simulate file being present in the database
+        if insert:
+            csv_path = file_storage / name
+
+            db_session.add(File(
+                filename = name,
+                content_type = "text/csv",
+                size = len(csv_text),
+                ncol = cols,
+                nrow = rows
+            ))
+            db_session.commit()
+
+        else:
+            csv_path = tmp_path / "input" / name
+            csv_path.parent.mkdir(exist_ok = True)
+            
         csv_path.write_text(csv_text)
 
         return csv_path

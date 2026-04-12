@@ -1,6 +1,5 @@
 import shutil
 import pytest
-from backend.files.models import File
 
 @pytest.mark.parametrize(
     ("filename", "ncol", "nrow", "size"),
@@ -70,17 +69,8 @@ def test_file_list(file_storage, client, generate_csv, filenames):
     assert response.status_code == 200
     assert response.json().sort() == filenames.sort()
 
-def test_get_file__ok(db_session, file_storage, client, generate_csv):
-    test_file = generate_csv()
-    shutil.copy(test_file, file_storage)
-    db_session.add(File(
-        filename = "test_file.csv",
-        content_type = "text/csv",
-        size = 65,
-        ncol = 3,
-        nrow = 2
-    ))
-    db_session.commit()
+def test_get_file__ok(client, generate_csv):
+    generate_csv(insert = True)
 
     response = client.get("/files/test_file.csv")
 
@@ -92,17 +82,8 @@ def test_get_file__missing(client):
 
     assert response.status_code == 404
 
-def test_update_file__ok(db_session, file_storage, client, generate_csv):
-    test_file_to_overwrite = generate_csv(name = "test_file.csv", cols = 1, rows = 3)
-    shutil.copy(test_file_to_overwrite, file_storage)
-    db_session.add(File(
-        filename = "test_file.csv",
-        content_type = "text/csv",
-        size = 65,
-        ncol = 1,
-        nrow = 3
-    ))
-    db_session.commit()
+def test_update_file__ok(client, generate_csv):
+    generate_csv(name = "test_file.csv", cols = 1, rows = 3, insert = True)
 
     test_file = generate_csv(name = "new_test_file.csv", cols = 5, rows = 1)
 
