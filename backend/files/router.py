@@ -2,7 +2,6 @@ from fastapi import APIRouter, UploadFile, HTTPException, status, Depends
 from fastapi.responses import FileResponse
 from sqlmodel import Session, select
 import polars as pl
-from io import StringIO
 from ..database import db_get
 from .models import File
 
