@@ -9,15 +9,19 @@ from sqlmodel import Session, SQLModel, create_engine
 
 from backend.config import settings
 
-@pytest.fixture(autouse = True)
+
+@pytest.fixture(autouse=True)
 def db_session():
-    test_engine = create_engine("sqlite://", connect_args = {"check_same_thread": False}, poolclass = StaticPool)
+    test_engine = create_engine(
+        "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
+    )
     SQLModel.metadata.create_all(test_engine)
 
     with Session(test_engine) as session:
         yield session
 
     test_engine.dispose()
+
 
 @pytest.fixture
 def client(db_session):
@@ -31,16 +35,20 @@ def client(db_session):
 
     app.dependency_overrides.clear()
 
-@pytest.fixture(autouse = True)
+
+@pytest.fixture(autouse=True)
 def file_storage(tmp_path):
     tmp_storage_path = tmp_path / "userfiles"
     tmp_storage_path.mkdir()
     settings.FILE_STORAGE = tmp_storage_path
     yield settings.FILE_STORAGE
 
+
 @pytest.fixture
 def generate_csv(tmp_path, file_storage, db_session):
-    def _generate_csv(name: str = "test_file.csv", cols: int = 3, rows: int = 2, insert: bool = False) -> Path:
+    def _generate_csv(
+        name: str = "test_file.csv", cols: int = 3, rows: int = 2, insert: bool = False
+    ) -> Path:
         # Generate file contents
         headers = ",".join((f"col-{c}" for c in range(cols)))
         csv_rows = [headers]
@@ -55,21 +63,23 @@ def generate_csv(tmp_path, file_storage, db_session):
         if insert:
             csv_path = file_storage / name
 
-            db_session.add(File(
-                filename = name,
-                content_type = "text/csv",
-                size = len(csv_text),
-                ncol = cols,
-                nrow = rows
-            ))
+            db_session.add(
+                File(
+                    filename=name,
+                    content_type="text/csv",
+                    size=len(csv_text),
+                    ncol=cols,
+                    nrow=rows,
+                )
+            )
             db_session.commit()
 
         else:
             csv_path = tmp_path / "input" / name
-            csv_path.parent.mkdir(exist_ok = True)
-            
+            csv_path.parent.mkdir(exist_ok=True)
+
         csv_path.write_text(csv_text)
 
         return csv_path
-    return _generate_csv
 
+    return _generate_csv
