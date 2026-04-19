@@ -6,7 +6,7 @@ CONNECT_ARGS = {
     "check_same_thread": False
 }
 
-engine = create_engine(settings.DB_PATH, connect_args = CONNECT_ARGS)
+engine = create_engine(f"sqlite:///{settings.DB_PATH}", connect_args = CONNECT_ARGS)
 
 def db_create():
     SQLModel.metadata.create_all(engine)

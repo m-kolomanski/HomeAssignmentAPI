@@ -23,7 +23,10 @@ def test_file_upload__ok(client, generate_csv, filename, ncol, nrow, size):
     assert response.json() == {
             "filename": filename,
             "content_type": "text/csv",
-            "size": size
+            "size": size,
+            "ncol": ncol,
+            "nrow": nrow,
+            "id": 1
         }
     
 def test_file_upload__file_exists(file_storage, client, generate_csv):
@@ -66,9 +69,8 @@ def test_file_list(file_storage, client, generate_csv, filenames):
     assert response.status_code == 200
     assert response.json().sort() == filenames.sort()
 
-def test_get_file__ok(file_storage, client, generate_csv):
-    test_file = generate_csv()
-    shutil.copy(test_file, file_storage)
+def test_get_file__ok(client, generate_csv):
+    generate_csv(insert = True)
 
     response = client.get("/files/test_file.csv")
 
@@ -80,9 +82,8 @@ def test_get_file__missing(client):
 
     assert response.status_code == 404
 
-def test_update_file__ok(file_storage, client, generate_csv):
-    test_file_to_overwrite = generate_csv(name = "test_file.csv", cols = 1, rows = 3)
-    shutil.copy(test_file_to_overwrite, file_storage)
+def test_update_file__ok(client, generate_csv):
+    generate_csv(name = "test_file.csv", cols = 1, rows = 3, insert = True)
 
     test_file = generate_csv(name = "new_test_file.csv", cols = 5, rows = 1)
 
@@ -96,7 +97,10 @@ def test_update_file__ok(file_storage, client, generate_csv):
     assert response.json() == {
             "filename": "test_file.csv",
             "content_type": "text/csv",
-            "size": 69
+            "size": 69,
+            "ncol": 5,
+            "nrow": 1,
+            "id": 1
         }
 
 def test_update_file__missing(client, generate_csv):
