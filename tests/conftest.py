@@ -4,32 +4,32 @@ from backend.main import app
 from backend.database import db_get
 from backend.files.models import File
 from pathlib import Path
+from sqlalchemy.pool import StaticPool
 from sqlmodel import Session, SQLModel, create_engine
 
 from backend.config import settings
 
-@pytest.fixture
-def client():
-    with TestClient(app) as test_client:
-        yield test_client
-
 @pytest.fixture(autouse = True)
-def db_session(tmp_path):
-    test_engine = create_engine(f"sqlite:///{tmp_path / 'test.db'}", connect_args = {"check_same_thread": False})
+def db_session():
+    test_engine = create_engine("sqlite://", connect_args = {"check_same_thread": False}, poolclass = StaticPool)
     SQLModel.metadata.create_all(test_engine)
 
-    def _db_get():
-        with Session(test_engine) as session:
-            yield session
-    
-    app.dependency_overrides[db_get] = _db_get
-    
     with Session(test_engine) as session:
         yield session
 
-    app.dependency_overrides.clear()
-    SQLModel.metadata.drop_all(test_engine)
     test_engine.dispose()
+
+@pytest.fixture
+def client(db_session):
+    def _db_get():
+        yield db_session
+
+    app.dependency_overrides[db_get] = _db_get
+
+    with TestClient(app) as test_client:
+        yield test_client
+
+    app.dependency_overrides.clear()
 
 @pytest.fixture(autouse = True)
 def file_storage(tmp_path):
