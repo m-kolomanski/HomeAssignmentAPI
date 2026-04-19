@@ -33,22 +33,16 @@ async def upload_files(file: UploadFile, db: Session = Depends(db_get)):
 
     if file_path.exists():
         raise HTTPException(status_code = 409, detail = "File already exists")
-
-    contents = await file.read()
-
-    with file_path.open("wb") as f:
-        f.write(contents)
     
-    p = pl.read_csv(StringIO(contents.decode()))
-    
-    shape = p.shape
+    lf = pl.scan_csv(file.file)
+    lf.sink_csv(file_path)
 
     file_entry = File(
         filename = file.filename,
         content_type = file.content_type,
-        size = len(contents),
-        ncol = shape[1],
-        nrow = shape[0]
+        size = file.size,
+        ncol = len(lf.collect_schema().names()),
+        nrow = lf.select(pl.len()).collect().item()
     )
     
     db.add(file_entry)
@@ -65,18 +59,13 @@ async def update_file(filename: str, file: UploadFile, db: Session = Depends(db_
 
     file_path = settings.FILE_STORAGE / filename
     
-    contents = await file.read()
-
-    with file_path.open("wb") as f:
-        f.write(contents)
-
-    p = pl.read_csv(StringIO(contents.decode()))
-    shape = p.shape
+    lf = pl.scan_csv(file.file)
+    lf.sink_csv(file_path)
     
     file_entry.content_type = file.content_type
-    file_entry.size = len(contents)
-    file_entry.ncol = shape[1]
-    file_entry.nrow = shape[0]
+    file_entry.size = file.size
+    file_entry.ncol = len(lf.collect_schema().names())
+    file_entry.nrow = lf.select(pl.len()).collect().item()
 
     db.add(file_entry)
     db.commit()
