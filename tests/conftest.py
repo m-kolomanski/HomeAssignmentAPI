@@ -47,7 +47,10 @@ def file_storage(tmp_path):
 @pytest.fixture
 def generate_csv(tmp_path, file_storage, db_session):
     def _generate_csv(
-        name: str = "test_file.csv", cols: int = 3, rows: int = 2, insert: bool = False
+        name: str = "test_file.csv",
+        cols: int = 3,
+        rows: int = 2,
+        insert: bool = False,
     ) -> Path:
         # Generate file contents
         headers = ",".join((f"col-{c}" for c in range(cols)))
