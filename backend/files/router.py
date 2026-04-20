@@ -28,7 +28,10 @@ async def get_file(filename: str, db: Session = Depends(db_get)):
 async def upload_files(file: UploadFile, db: Session = Depends(db_get)):
     if file.content_type != "text/csv":
         raise HTTPException(status_code = status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail = "Invalid file type")
-    
+
+    if not file.filename:
+        raise HTTPException(status_code = status.HTTP_422_UNPROCESSABLE_ENTITY, detail = "Filename is required")
+
     file_path = settings.FILE_STORAGE / file.filename
 
     if file_path.exists():
@@ -56,6 +59,12 @@ async def update_file(filename: str, file: UploadFile, db: Session = Depends(db_
     file_entry = db.exec(select(File).where(File.filename == filename)).one_or_none()
     if not file_entry:
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND)
+    
+    if not file.content_type:
+        raise HTTPException(status_code = status.HTTP_422_UNPROCESSABLE_ENTITY, detail = "Missing content type")
+    
+    if not file.size:
+        raise HTTPException(status_code = status.HTTP_422_UNPROCESSABLE_CONTENT, detail = "Missing file size")
 
     file_path = settings.FILE_STORAGE / filename
     
