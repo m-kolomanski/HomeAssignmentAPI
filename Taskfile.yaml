@@ -10,3 +10,18 @@ tasks:
   test:
     desc: Run tests
     cmd: uv run pytest tests/*
+  lint:
+    desc: Run Ruff linter
+    cmd: uv run ruff check
+  format:
+    desc: Run Ruff formatter
+    cmd: uv run ruff format
+  typecheck:
+    desc: Run MyPy check
+    cmd: uv run mypy .
+  precommit-run:
+    desc: Run pre-commit checks
+    cmd: uv run pre-commit run --all-files
+  precommit-install:
+    desc: Install pre-commit checks
+    cmd: uv run pre-commit install --hook-type pre-push
