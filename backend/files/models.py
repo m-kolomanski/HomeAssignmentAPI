@@ -8,5 +8,5 @@ class File(SQLModel, table=True):
     size: int
     ncol: int
     nrow: int
-    uploaded_time: datetime = Field(default_factory = datetime.utcnow)
+    uploaded_time: datetime = Field(default_factory=lambda: datetime.now())
     edited_time: datetime | None = Field(default = None)
