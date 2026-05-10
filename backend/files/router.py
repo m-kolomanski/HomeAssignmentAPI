@@ -54,7 +54,7 @@ async def upload_files(file: UploadFile, db: Session = Depends(db_get)):
         content_type=file.content_type,
         size=file.size,
         ncol=len(lf.collect_schema().names()),
-        nrow=lf.select(pl.len()).collect().item()
+        nrow=lf.select(pl.len()).collect().item(),
     )
 
     db.add(file_entry)
