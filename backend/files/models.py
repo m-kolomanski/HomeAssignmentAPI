@@ -1,5 +1,5 @@
 from sqlmodel import SQLModel, Field
-
+from datetime import datetime
 
 class File(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
@@ -8,3 +8,5 @@ class File(SQLModel, table=True):
     size: int
     ncol: int
     nrow: int
+    uploaded_time: datetime = Field(default_factory = datetime.utcnow)
+    edited_time: datetime | None = Field(default = None)
