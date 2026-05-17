@@ -26,7 +26,8 @@ def test_file_upload__ok(client, generate_csv, filename, ncol, nrow, size):
         "ncol": ncol,
         "nrow": nrow,
         "id": 1,
-        "uploaded_at": "2026-05-10T12:00:00"
+        "uploaded_at": "2026-05-10T12:00:00",
+        "updated_at": "2026-05-10T12:00:00"
     }
 
 
@@ -107,7 +108,8 @@ def test_update_file__ok(client, generate_csv):
         "ncol": 5,
         "nrow": 1,
         "id": 1,
-        "uploaded_at": "2026-05-10T12:00:00"
+        "uploaded_at": "2026-05-10T12:00:00",
+        "updated_at": "2026-05-10T12:00:00"
     }
 
 

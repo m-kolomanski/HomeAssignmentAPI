@@ -9,3 +9,4 @@ class File(SQLModel, table=True):
     ncol: int
     nrow: int
     uploaded_at: datetime = Field(default_factory=lambda: datetime.now())
+    updated_at: datetime = Field(default_factory=lambda: datetime.now())
