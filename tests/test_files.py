@@ -2,6 +2,7 @@ import shutil
 import pytest
 from freezegun import freeze_time
 
+
 @pytest.mark.parametrize(
     ("filename", "ncol", "nrow", "size"),
     [
@@ -27,7 +28,7 @@ def test_file_upload__ok(client, generate_csv, filename, ncol, nrow, size):
         "nrow": nrow,
         "id": 1,
         "uploaded_at": "2026-05-10T12:00:00",
-        "updated_at": "2026-05-10T12:00:00"
+        "updated_at": "2026-05-10T12:00:00",
     }
 
 
@@ -89,6 +90,7 @@ def test_get_file__missing(client):
 
     assert response.status_code == 404
 
+
 @freeze_time("2026-05-10 12:00:00")
 def test_update_file__ok(client, generate_csv):
     generate_csv(name="test_file.csv", cols=1, rows=3, insert=True)
@@ -109,7 +111,7 @@ def test_update_file__ok(client, generate_csv):
         "nrow": 1,
         "id": 1,
         "uploaded_at": "2026-05-10T12:00:00",
-        "updated_at": "2026-05-10T12:00:00"
+        "updated_at": "2026-05-10T12:00:00",
     }
 
 
