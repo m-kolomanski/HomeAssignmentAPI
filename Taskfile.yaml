@@ -6,7 +6,9 @@ tasks:
     cmd: task --list
   run-dev:
     desc: Run API in development mode
-    cmd: uv run fastapi dev backend/main.py
+    cmds:
+      - uv run alembic upgrade head
+      - uv run fastapi dev backend/main.py
   test:
     desc: Run tests
     cmd: uv run pytest tests/*
