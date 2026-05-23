@@ -9,6 +9,11 @@ tasks:
     cmds:
       - uv run alembic upgrade head
       - uv run fastapi dev backend/main.py
+  alembic-revision:
+    desc: Create new database revision
+    requires:
+      vars: [DESCRIPTION]
+    cmd: uv run alembic revision --autogenerate -m "{{.DESCRIPTION}}"
   test:
     desc: Run tests
     cmd: uv run pytest tests/*
