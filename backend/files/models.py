@@ -3,7 +3,7 @@ from datetime import datetime
 
 
 class File(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
+    id: int = Field(default=None, primary_key=True)
     filename: str
     content_type: str
     size: int
