@@ -1,4 +1,5 @@
 from sqlmodel import SQLModel, Field
+from datetime import datetime
 
 
 class File(SQLModel, table=True):
@@ -8,3 +9,5 @@ class File(SQLModel, table=True):
     size: int
     ncol: int
     nrow: int
+    uploaded_at: datetime = Field(default_factory=lambda: datetime.now())
+    updated_at: datetime = Field(default_factory=lambda: datetime.now())
