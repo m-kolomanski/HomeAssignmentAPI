@@ -6,7 +6,7 @@ from .database import db_create
 from .system.router import router as system_router
 from .files.router import router as files_router
 from .tags.router import router as tags_router
-
+from .file_tags.router import router as file_tags_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -19,7 +19,7 @@ app = FastAPI(lifespan=lifespan)
 app.include_router(system_router)
 app.include_router(files_router)
 app.include_router(tags_router)
-
+app.include_router(file_tags_router)
 
 @app.get("/")
 async def root():
