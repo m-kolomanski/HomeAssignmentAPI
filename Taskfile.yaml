@@ -14,6 +14,12 @@ tasks:
     requires:
       vars: [DESCRIPTION]
     cmd: uv run alembic revision --autogenerate -m "{{.DESCRIPTION}}"
+  alembic-downgrade:
+    decs: Downgrades by one and removes previous revision
+    cmds:
+      - uv run alembic downgrade -1
+      - rm $(ls -t alembic/versions/*.py | head -1)
+      - uv run alembic upgrade head
   test:
     desc: Run tests
     cmd: uv run pytest tests/*
