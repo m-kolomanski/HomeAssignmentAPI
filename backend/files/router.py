@@ -20,8 +20,8 @@ router = APIRouter(tags=["files"])
 async def get_files(db: Session = Depends(db_get)):
     files_with_tags = db.exec(
         select(File, Tag.name)
-        .join(FileTag, FileTag.file_id == File.id, isouter=True)
-        .join(Tag, Tag.id == FileTag.tag_id, isouter=True)
+        .join(FileTag, FileTag.file_id == File.id, isouter=True)  # type: ignore[arg-type]
+        .join(Tag, Tag.id == FileTag.tag_id, isouter=True)  # type: ignore[arg-type]
     ).all()
 
     result: dict[int, FileMetadataResponse] = {}

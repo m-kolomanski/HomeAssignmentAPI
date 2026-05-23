@@ -24,3 +24,6 @@ dev = [
     "freezegun>=1.5.5",
     "alembic>=1.18.4",
 ]
+
+[tool.mypy]
+plugins = ["sqlalchemy.ext.mypy.plugin"]

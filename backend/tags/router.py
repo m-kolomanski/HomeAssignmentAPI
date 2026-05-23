@@ -35,7 +35,7 @@ async def delete_tag(name: str, db: Session = Depends(db_get)):
     if not tag_exists:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
-    db.exec(delete(Tag).where(Tag.id == tag_exists.id))
+    db.exec(delete(Tag).where(Tag.id == tag_exists.id))  # type: ignore[arg-type]
     db.commit()
 
     return Response(status_code=status.HTTP_200_OK)
