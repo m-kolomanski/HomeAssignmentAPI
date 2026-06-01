@@ -23,6 +23,7 @@ dev = [
     "ruff>=0.15.11",
     "freezegun>=1.5.5",
     "alembic>=1.18.4",
+    "logging>=0.4.9.6",
 ]
 
 [tool.mypy]
