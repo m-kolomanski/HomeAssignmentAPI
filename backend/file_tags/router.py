@@ -1,11 +1,13 @@
 from fastapi import APIRouter, HTTPException, status, Depends, Response
 from sqlmodel import Session, select
+import logging
 
 from ..database import db_get
 from .models import FileTag
 from ..files.models import File
 from ..tags.models import Tag
 
+logger = logging.getLogger(__name__)
 router = APIRouter(tags=["files"])
 
 
@@ -14,6 +16,7 @@ async def tag_file(filename: str, tag_name: str, db: Session = Depends(db_get)):
     file_entry = db.exec(select(File).where(File.filename == filename)).one_or_none()
 
     if not file_entry:
+        logger.error("File not found: %s", filename)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"File '{filename}' not found"
         )
@@ -21,6 +24,7 @@ async def tag_file(filename: str, tag_name: str, db: Session = Depends(db_get)):
     tag_entry = db.exec(select(Tag).where(Tag.name == tag_name)).one_or_none()
 
     if not tag_entry:
+        logger.error("Tag not found: %s", tag_name)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"Tag '{tag_name}' not found"
         )
@@ -32,12 +36,15 @@ async def tag_file(filename: str, tag_name: str, db: Session = Depends(db_get)):
     ).one_or_none()
 
     if file_already_tagged:
+        logger.error("File: %s already tagged with: %s", filename, tag_name)
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"File '{filename}' already has '{tag_name}' tag",
         )
 
     file_tag_entry = FileTag(file_id=file_entry.id, tag_id=tag_entry.id)
+
+    logger.info("Adding new tag: %s to file: %s", tag_name, filename)
 
     db.add(file_tag_entry)
     db.commit()
@@ -51,6 +58,7 @@ async def untag_file(filename: str, tag_name: str, db: Session = Depends(db_get)
     file_entry = db.exec(select(File).where(File.filename == filename)).one_or_none()
 
     if not file_entry:
+        logger.error("File not found: %s", filename)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"File '{filename}' not found"
         )
@@ -58,6 +66,7 @@ async def untag_file(filename: str, tag_name: str, db: Session = Depends(db_get)
     tag_entry = db.exec(select(Tag).where(Tag.name == tag_name)).one_or_none()
 
     if not tag_entry:
+        logger.error("Tag not found: %s", tag_name)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"Tag '{tag_name}' not found"
         )
@@ -69,10 +78,13 @@ async def untag_file(filename: str, tag_name: str, db: Session = Depends(db_get)
     ).one_or_none()
 
     if not file_tag_entry:
+        logger.error("File: %s does not have tag: %s", filename, tag_name)
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"File '{filename}' dos not have '{tag_name}' tag",
         )
+
+    logger.info("Deleting tag: %s from file: %s", tag_name, filename)
 
     db.delete(file_tag_entry)
     db.commit()
