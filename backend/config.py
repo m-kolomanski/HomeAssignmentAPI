@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     FILE_STORAGE: Path = Field(alias="FILE_STORAGE", default=Path("./userfiles"))
     DB_PATH: Path = Field(alias="DB_PATH", default=Path("./app.db"))
     HAAPI_LOG_LEVEL: str = Field(default="INFO")
+    HAAPI_LOG_FILE_PATH: str = Field(default="log.jsonl")
 
     model_config = SettingsConfigDict(
         env_file=".env",

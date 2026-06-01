@@ -1,9 +1,15 @@
 import logging
 import re
+import json
+import copy
 from .config import settings
 from contextvars import ContextVar
 
-class LogConsoleFormatter(logging.Formatter):
+class HAAPILogFormatter(logging.Formatter):
+    method: ContextVar[str] = ContextVar("method", default = "-")
+    route: ContextVar[str] = ContextVar("route", default = "-")
+
+class LogConsoleFormatter(HAAPILogFormatter):
     COLORS = {
         "DEBUG":    "\033[90m",  # gray
         "INFO":     "\033[34m",  # blue
@@ -13,12 +19,11 @@ class LogConsoleFormatter(logging.Formatter):
     }
     BOLD = "\033[1m"
     RESET = "\033[0m"
-
-    method: ContextVar[str] = ContextVar("method", default = "-")
-    route: ContextVar[str] = ContextVar("route", default = "-")
-
+    
     def format(self, record):
         # Colors the log level
+        record = copy.copy(record)
+
         color = self.COLORS.get(record.levelname, self.RESET)
         record.levelprefix = f"{color}[{record.levelname}]{self.RESET}"
         
@@ -34,6 +39,19 @@ class LogConsoleFormatter(logging.Formatter):
             record.args = None
         return super().format(record)
 
+class LogJsonFormatter(HAAPILogFormatter):
+    def format(self, record):
+        log_entry = {
+            "timestamp": self.formatTime(record, "%Y-%m-%d %H:%M:%S"),
+            "level": record.levelname,
+            "logger": record.name,
+            "method": self.method.get(),
+            "route": self.route.get(),
+            "message": record.getMessage(),
+        }
+
+        return json.dumps(log_entry)
+
 LOG_CONFIG = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -42,16 +60,24 @@ LOG_CONFIG = {
             "()": LogConsoleFormatter,
             "format": "%(levelprefix)s[%(name)s][%(method)s %(route)s] %(asctime)s: %(message)s",
             "datefmt": "%Y-%m-%d %H:%M:%S"
+        },
+        "json": {
+            "()": LogJsonFormatter
         }
     },
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
             "formatter": "default"
+        },
+        "file": {
+            "class": logging.FileHandler,
+            "filename": settings.HAAPI_LOG_FILE_PATH,
+            "formatter": "json"
         }
     },
     "root": {
         "level": settings.HAAPI_LOG_LEVEL,
-        "handlers": ["console"]
+        "handlers": ["console", "file"]
     },
 }
