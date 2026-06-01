@@ -71,9 +71,12 @@ LOG_CONFIG = {
             "formatter": "default"
         },
         "file": {
-            "class": logging.FileHandler,
+            "class": "logging.handlers.TimedRotatingFileHandler",
             "filename": settings.HAAPI_LOG_FILE_PATH,
-            "formatter": "json"
+            "formatter": "json",
+            "when": "midnight",
+            "interval": 1,
+            "backupCount": 7
         }
     },
     "root": {
