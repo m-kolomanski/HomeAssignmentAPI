@@ -4,14 +4,14 @@ from sqlmodel import Session, select
 import polars as pl
 from datetime import datetime
 
-from ..database import db_get
-from .models import File
-from .schemas import FileMetadataResponse
+from backend.database import db_get
+from backend.files.models import File
+from backend.files.schemas import FileMetadataResponse
 
-from ..tags.models import Tag
-from ..file_tags.models import FileTag
+from backend.tags.models import Tag
+from backend.file_tags.models import FileTag
 
-from ..config import settings
+from backend.config import settings
 
 router = APIRouter(tags=["files"])
 

@@ -1,10 +1,10 @@
 from fastapi import APIRouter, HTTPException, status, Depends, Response
 from sqlmodel import Session, select
 
-from ..database import db_get
-from .models import FileTag
-from ..files.models import File
-from ..tags.models import Tag
+from backend.database import db_get
+from backend.file_tags.models import FileTag
+from backend.files.models import File
+from backend.tags.models import Tag
 
 router = APIRouter(tags=["files"])
 
