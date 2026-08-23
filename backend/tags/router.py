@@ -2,8 +2,8 @@ from fastapi import APIRouter, HTTPException, status, Depends, Response
 from sqlmodel import Session, select, delete
 import logging
 
-from ..database import db_get
-from .models import Tag
+from backend.database import db_get
+from backend.tags.models import Tag
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["tags"])
