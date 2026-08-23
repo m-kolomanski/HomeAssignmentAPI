@@ -8,19 +8,18 @@ from ..tags.models import Tag
 
 router = APIRouter(tags=["files"])
 
-
 @router.post("/file/{filename}/tag")
 async def tag_file(filename: str, tag_name: str, db: Session = Depends(db_get)):
     file_entry = db.exec(select(File).where(File.filename == filename)).one_or_none()
 
-    if not file_entry:
+    if file_entry is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"File '{filename}' not found"
         )
 
     tag_entry = db.exec(select(Tag).where(Tag.name == tag_name)).one_or_none()
 
-    if not tag_entry:
+    if tag_entry is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"Tag '{tag_name}' not found"
         )
@@ -50,14 +49,14 @@ async def tag_file(filename: str, tag_name: str, db: Session = Depends(db_get)):
 async def untag_file(filename: str, tag_name: str, db: Session = Depends(db_get)):
     file_entry = db.exec(select(File).where(File.filename == filename)).one_or_none()
 
-    if not file_entry:
+    if file_entry is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"File '{filename}' not found"
         )
 
     tag_entry = db.exec(select(Tag).where(Tag.name == tag_name)).one_or_none()
 
-    if not tag_entry:
+    if tag_entry is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"Tag '{tag_name}' not found"
         )
