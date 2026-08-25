@@ -9,7 +9,7 @@ from backend.tags.models import Tag
 router = APIRouter(tags=["files"])
 
 
-@router.post("/file/{filename}/tag")
+@router.post("/files/{filename}/tags")
 async def tag_file(filename: str, tag_name: str, db: Session = Depends(db_get)):
     file_entry = db.exec(select(File).where(File.filename == filename)).one_or_none()
 
@@ -46,7 +46,7 @@ async def tag_file(filename: str, tag_name: str, db: Session = Depends(db_get)):
     return file_tag_entry
 
 
-@router.delete("/file/{filename}/tag")
+@router.delete("/files/{filename}/tags")
 async def untag_file(filename: str, tag_name: str, db: Session = Depends(db_get)):
     file_entry = db.exec(select(File).where(File.filename == filename)).one_or_none()
 
