@@ -87,7 +87,7 @@ async def untag_file(filename: str, tag_name: str, db: Session = Depends(db_get)
     if not file_tag_entry:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=f"File '{filename}' dos not have '{tag_name}' tag",
+            detail=f"File '{filename}' does not have '{tag_name}' tag",
         )
 
     db.delete(file_tag_entry)
