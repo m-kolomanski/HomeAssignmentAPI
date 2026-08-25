@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, status, Depends, Response
-from sqlmodel import Session, select
+from sqlmodel import Session, col, select
 
 from backend.database import db_get
 from backend.file_tags.models import FileTag
@@ -8,6 +8,22 @@ from backend.tags.models import Tag
 
 router = APIRouter(tags=["files"])
 
+@router.get("/files/{filename}/tags")
+async def get_file_tags(filename: str, db: Session = Depends(db_get)):
+    file_entry = db.exec(select(File).where(File.filename == filename)).one_or_none()
+
+    if file_entry is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"File '{filename}' not found"
+        )
+
+    file_tags = db.exec(
+        select(Tag.name)
+        .join(FileTag, col(FileTag.tag_id) == col(Tag.id))
+        .where(FileTag.file_id == file_entry.id)
+    ).all()
+
+    return file_tags
 
 @router.post("/files/{filename}/tags")
 async def tag_file(filename: str, tag_name: str, db: Session = Depends(db_get)):
