@@ -8,6 +8,7 @@ from backend.tags.models import Tag
 
 router = APIRouter(tags=["files"])
 
+
 @router.get("/files/{filename}/tags")
 async def get_file_tags(filename: str, db: Session = Depends(db_get)):
     file_entry = db.exec(select(File).where(File.filename == filename)).one_or_none()
@@ -24,6 +25,7 @@ async def get_file_tags(filename: str, db: Session = Depends(db_get)):
     ).all()
 
     return file_tags
+
 
 @router.post("/files/{filename}/tags")
 async def tag_file(filename: str, tag_name: str, db: Session = Depends(db_get)):
