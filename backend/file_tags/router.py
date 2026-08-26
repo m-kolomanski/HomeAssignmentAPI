@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, status, Depends, Response
-from sqlmodel import Session, select
 import logging
+from sqlmodel import Session, col, select
 
 from backend.database import db_get
 from backend.file_tags.models import FileTag
@@ -11,7 +11,25 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["files"])
 
 
-@router.post("/file/{filename}/tag")
+@router.get("/files/{filename}/tags")
+async def get_file_tags(filename: str, db: Session = Depends(db_get)):
+    file_entry = db.exec(select(File).where(File.filename == filename)).one_or_none()
+
+    if file_entry is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"File '{filename}' not found"
+        )
+
+    file_tags = db.exec(
+        select(Tag.name)
+        .join(FileTag, col(FileTag.tag_id) == col(Tag.id))
+        .where(FileTag.file_id == file_entry.id)
+    ).all()
+
+    return file_tags
+
+
+@router.post("/files/{filename}/tags")
 async def tag_file(filename: str, tag_name: str, db: Session = Depends(db_get)):
     file_entry = db.exec(select(File).where(File.filename == filename)).one_or_none()
 
@@ -54,7 +72,7 @@ async def tag_file(filename: str, tag_name: str, db: Session = Depends(db_get)):
     return file_tag_entry
 
 
-@router.delete("/file/{filename}/tag")
+@router.delete("/files/{filename}/tags")
 async def untag_file(filename: str, tag_name: str, db: Session = Depends(db_get)):
     file_entry = db.exec(select(File).where(File.filename == filename)).one_or_none()
 
@@ -82,7 +100,7 @@ async def untag_file(filename: str, tag_name: str, db: Session = Depends(db_get)
         logger.error("File: %s does not have tag: %s", filename, tag_name)
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=f"File '{filename}' dos not have '{tag_name}' tag",
+            detail=f"File '{filename}' does not have '{tag_name}' tag",
         )
 
     logger.info("Deleting tag: %s from file: %s", tag_name, filename)
