@@ -4,17 +4,35 @@ from sqlmodel import Session, select
 import polars as pl
 from datetime import datetime
 
-from ..database import db_get
-from .models import File
+from backend.database import db_get
+from backend.files.models import File
+from backend.files.schemas import FileMetadataResponse
 
-from ..config import settings
+from backend.tags.models import Tag
+from backend.file_tags.models import FileTag
+
+from backend.config import settings
 
 router = APIRouter(tags=["files"])
 
 
 @router.get("/files")
 async def get_files(db: Session = Depends(db_get)):
-    return db.exec(select(File)).all()
+    files_with_tags = db.exec(
+        select(File, Tag.name)
+        .join(FileTag, FileTag.file_id == File.id, isouter=True)  # type: ignore[arg-type]
+        .join(Tag, Tag.id == FileTag.tag_id, isouter=True)  # type: ignore[arg-type]
+    ).all()
+
+    result: dict[int, FileMetadataResponse] = {}
+
+    for file, tag_name in files_with_tags:
+        if file.id not in result:
+            result[file.id] = FileMetadataResponse(**file.model_dump(), tags=[])
+        if tag_name:
+            result[file.id].tags.append(tag_name)
+
+    return list(result.values())
 
 
 @router.get("/files/{filename}")

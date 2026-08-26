@@ -6,6 +6,7 @@ from sqlmodel import SQLModel
 
 from alembic import context
 from backend.files.models import File  # noqa: F401
+from backend.tags.models import Tag  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
