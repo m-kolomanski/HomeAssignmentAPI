@@ -5,6 +5,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class Settings(BaseSettings):
     FILE_STORAGE: Path = Field(alias="FILE_STORAGE", default=Path("./userfiles"))
     DB_PATH: Path = Field(alias="DB_PATH", default=Path("./app.db"))
@@ -34,7 +35,9 @@ class Settings(BaseSettings):
     def validate_log_level(cls, raw_val: str):
         log_level = raw_val.upper()
         if log_level not in ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"):
-            raise ValueError(f"Invalid log level: `{raw_val}. Must be one of `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`,")
+            raise ValueError(
+                f"Invalid log level: `{raw_val}. Must be one of `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`,"
+            )
         return log_level
 
     @field_validator("HAAPI_LOG_FILE_PATH", mode="after")
@@ -43,5 +46,6 @@ class Settings(BaseSettings):
         path = Path(raw_val)
         path.parent.mkdir(parents=True, exist_ok=True)
         return path
+
 
 settings = Settings()

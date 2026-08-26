@@ -8,6 +8,7 @@ from backend.tags.models import Tag
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["tags"])
 
+
 @router.get("/tags")
 async def get_tags(db: Session = Depends(db_get)):
     return db.exec(select(Tag)).all()

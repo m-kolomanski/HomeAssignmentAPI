@@ -33,7 +33,6 @@ async def get_file_tags(filename: str, db: Session = Depends(db_get)):
 async def tag_file(filename: str, tag_name: str, db: Session = Depends(db_get)):
     file_entry = db.exec(select(File).where(File.filename == filename)).one_or_none()
 
-
     if file_entry is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"File '{filename}' not found"
