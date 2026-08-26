@@ -1,9 +1,11 @@
 from fastapi import APIRouter, HTTPException, status, Depends, Response
 from sqlmodel import Session, select, delete
+import logging
 
 from backend.database import db_get
 from backend.tags.models import Tag
 
+logger = logging.getLogger(__name__)
 router = APIRouter(tags=["tags"])
 
 
@@ -21,6 +23,7 @@ async def upload_tags(name: str, db: Session = Depends(db_get)):
 
     tag_entry = Tag(name=name)
 
+    logger.info("Adding new tag: %s", name)
     db.add(tag_entry)
     db.commit()
     db.refresh(tag_entry)

@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, status, Depends, Response
+import logging
 from sqlmodel import Session, col, select
 
 from backend.database import db_get
@@ -6,6 +7,7 @@ from backend.file_tags.models import FileTag
 from backend.files.models import File
 from backend.tags.models import Tag
 
+logger = logging.getLogger(__name__)
 router = APIRouter(tags=["files"])
 
 
@@ -57,6 +59,8 @@ async def tag_file(filename: str, tag_name: str, db: Session = Depends(db_get)):
 
     file_tag_entry = FileTag(file_id=file_entry.id, tag_id=tag_entry.id)
 
+    logger.info("Adding new tag: %s to file: %s", tag_name, filename)
+
     db.add(file_tag_entry)
     db.commit()
     db.refresh(file_tag_entry)
@@ -91,6 +95,8 @@ async def untag_file(filename: str, tag_name: str, db: Session = Depends(db_get)
             status_code=status.HTTP_409_CONFLICT,
             detail=f"File '{filename}' does not have '{tag_name}' tag",
         )
+
+    logger.info("Deleting tag: %s from file: %s", tag_name, filename)
 
     db.delete(file_tag_entry)
     db.commit()

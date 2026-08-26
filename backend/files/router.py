@@ -3,6 +3,7 @@ from fastapi.responses import FileResponse
 from sqlmodel import Session, select
 import polars as pl
 from datetime import datetime
+import logging
 
 from backend.database import db_get
 from backend.files.models import File
@@ -13,6 +14,7 @@ from backend.file_tags.models import FileTag
 
 from backend.config import settings
 
+logger = logging.getLogger(__name__)
 router = APIRouter(tags=["files"])
 
 
@@ -76,6 +78,8 @@ async def upload_files(file: UploadFile, db: Session = Depends(db_get)):
         nrow=lf.select(pl.len()).collect().item(),
     )
 
+    logger.info("Adding file: %s", file_entry.filename)
+
     db.add(file_entry)
     db.commit()
     db.refresh(file_entry)
@@ -111,6 +115,8 @@ async def update_file(filename: str, file: UploadFile, db: Session = Depends(db_
     file_entry.ncol = len(lf.collect_schema().names())
     file_entry.nrow = lf.select(pl.len()).collect().item()
     file_entry.updated_at = datetime.now()
+
+    logger.info("Updating file: %s", filename)
 
     db.add(file_entry)
     db.commit()
