@@ -12,7 +12,6 @@ from .files.router import router as files_router
 from .tags.router import router as tags_router
 from .file_tags.router import router as file_tags_router
 
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logging.config.dictConfig(LOG_CONFIG)

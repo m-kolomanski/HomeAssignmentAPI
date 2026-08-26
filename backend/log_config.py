@@ -83,4 +83,9 @@ LOG_CONFIG = {
         "level": settings.HAAPI_LOG_LEVEL,
         "handlers": ["console", "file"]
     },
+    "loggers": {
+        "uvicorn": {"handlers": [], "propagate": False},
+        "uvicorn.error": {"handlers": [], "propagate": False},
+        "uvicorn.access": {"handlers": [], "propagate": False},
+    },
 }
