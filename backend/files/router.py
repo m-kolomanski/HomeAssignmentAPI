@@ -41,7 +41,6 @@ async def get_files(db: Session = Depends(db_get)):
 async def get_file(filename: str, db: Session = Depends(db_get)):
     file_entry = db.exec(select(File).where(File.filename == filename)).one_or_none()
     if not file_entry:
-        logger.error("File not found: %s", filename)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
     file_path = settings.FILE_STORAGE / filename
@@ -52,14 +51,12 @@ async def get_file(filename: str, db: Session = Depends(db_get)):
 @router.post("/files")
 async def upload_files(file: UploadFile, db: Session = Depends(db_get)):
     if file.content_type != "text/csv":
-        logger.error("Invalid content type provided: %s", file.content_type)
         raise HTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
             detail="Invalid file type",
         )
 
     if not file.filename:
-        logger.error("No filename provided")
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Filename is required",
@@ -68,7 +65,6 @@ async def upload_files(file: UploadFile, db: Session = Depends(db_get)):
     file_path = settings.FILE_STORAGE / file.filename
 
     if file_path.exists():
-        logger.error("File already exists in path: %s", file_path)
         raise HTTPException(status_code=409, detail="File already exists")
 
     lf = pl.scan_csv(file.file)
@@ -95,18 +91,15 @@ async def upload_files(file: UploadFile, db: Session = Depends(db_get)):
 async def update_file(filename: str, file: UploadFile, db: Session = Depends(db_get)):
     file_entry = db.exec(select(File).where(File.filename == filename)).one_or_none()
     if not file_entry:
-        logger.error("File does not exist: %s", filename)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
     if not file.content_type:
-        logger.error("No content type provided")
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Missing content type",
         )
 
     if not file.size:
-        logger.error("No file size present")
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="Missing file size",

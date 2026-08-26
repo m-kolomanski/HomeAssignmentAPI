@@ -35,7 +35,6 @@ async def tag_file(filename: str, tag_name: str, db: Session = Depends(db_get)):
 
 
     if file_entry is None:
-        logger.error("File not found: %s", filename)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"File '{filename}' not found"
         )
@@ -43,7 +42,6 @@ async def tag_file(filename: str, tag_name: str, db: Session = Depends(db_get)):
     tag_entry = db.exec(select(Tag).where(Tag.name == tag_name)).one_or_none()
 
     if tag_entry is None:
-        logger.error("Tag not found: %s", tag_name)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"Tag '{tag_name}' not found"
         )
@@ -55,7 +53,6 @@ async def tag_file(filename: str, tag_name: str, db: Session = Depends(db_get)):
     ).one_or_none()
 
     if file_already_tagged:
-        logger.error("File: %s already tagged with: %s", filename, tag_name)
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"File '{filename}' already has '{tag_name}' tag",
@@ -77,7 +74,6 @@ async def untag_file(filename: str, tag_name: str, db: Session = Depends(db_get)
     file_entry = db.exec(select(File).where(File.filename == filename)).one_or_none()
 
     if file_entry is None:
-        logger.error("File not found: %s", filename)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"File '{filename}' not found"
         )
@@ -85,7 +81,6 @@ async def untag_file(filename: str, tag_name: str, db: Session = Depends(db_get)
     tag_entry = db.exec(select(Tag).where(Tag.name == tag_name)).one_or_none()
 
     if tag_entry is None:
-        logger.error("Tag not found: %s", tag_name)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"Tag '{tag_name}' not found"
         )
@@ -97,7 +92,6 @@ async def untag_file(filename: str, tag_name: str, db: Session = Depends(db_get)
     ).one_or_none()
 
     if not file_tag_entry:
-        logger.error("File: %s does not have tag: %s", filename, tag_name)
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"File '{filename}' does not have '{tag_name}' tag",

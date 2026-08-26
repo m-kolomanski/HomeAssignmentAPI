@@ -1,4 +1,5 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
+from fastapi.exception_handlers import http_exception_handler
 from contextlib import asynccontextmanager
 import logging
 import logging.config
@@ -39,10 +40,14 @@ async def log_request(request: Request, call_next):
     logger.debug("Incoming request")
     
     response = await call_next(request)
-
     logger.debug(response.status_code)
     
     return response
+
+@app.exception_handler(HTTPException)
+async def log_exception(request: Request, exception: HTTPException):
+    logger.warning(f"HTTPException: [{exception.status_code}] {exception.detail}")
+    return await http_exception_handler(request, exception)
 
 @app.get("/")
 async def root():
