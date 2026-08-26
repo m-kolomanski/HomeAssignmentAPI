@@ -33,13 +33,16 @@ app.include_router(tags_router)
 app.include_router(file_tags_router)
 
 @app.middleware("http")
-async def log_request(request: Request, call_next):
+async def log_request(request: Request, call_next): 
     LogConsoleFormatter.method.set(request.method)
     LogConsoleFormatter.route.set(request.url.path)
-    logger.info("Request received")
+    logger.debug("Incoming request")
+    
     response = await call_next(request)
-    return response
 
+    logger.debug(response.status_code)
+    
+    return response
 
 @app.get("/")
 async def root():
