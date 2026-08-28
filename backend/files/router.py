@@ -1,8 +1,10 @@
 from fastapi import APIRouter, UploadFile, HTTPException, status, Depends
 from fastapi.responses import FileResponse
 from sqlmodel import Session, select
+from sqlalchemy.exc import IntegrityError
 import polars as pl
 from datetime import datetime
+from pathlib import Path
 import logging
 
 from backend.database import db_get
@@ -39,11 +41,14 @@ async def get_files(db: Session = Depends(db_get)):
 
 @router.get("/files/{filename}")
 async def get_file(filename: str, db: Session = Depends(db_get)):
-    file_entry = db.exec(select(File).where(File.filename == filename)).one_or_none()
+    file_basename = Path(filename).stem
+    file_entry = db.exec(
+        select(File).where(File.filename == file_basename)
+    ).one_or_none()
     if not file_entry:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
-    file_path = settings.FILE_STORAGE / filename
+    file_path = settings.FILE_STORAGE / f"{file_entry.id}.csv"
 
     return FileResponse(file_path)
 
@@ -62,16 +67,12 @@ async def upload_files(file: UploadFile, db: Session = Depends(db_get)):
             detail="Filename is required",
         )
 
-    file_path = settings.FILE_STORAGE / file.filename
-
-    if file_path.exists():
-        raise HTTPException(status_code=409, detail="File already exists")
-
     lf = pl.scan_csv(file.file)
-    lf.sink_csv(file_path)
+
+    file_basename = Path(file.filename).stem
 
     file_entry = File(
-        filename=file.filename,
+        filename=file_basename,
         content_type=file.content_type,
         size=file.size,
         ncol=len(lf.collect_schema().names()),
@@ -80,16 +81,43 @@ async def upload_files(file: UploadFile, db: Session = Depends(db_get)):
 
     logger.info("Adding file: %s", file_entry.filename)
 
-    db.add(file_entry)
-    db.commit()
-    db.refresh(file_entry)
+    try:
+        db.add(file_entry)
+        db.commit()
+        db.refresh(file_entry)
+    except IntegrityError as err:
+        db.rollback()
+
+        if "UNIQUE constraint failed" in str(err.orig):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail="File already exists"
+            )
+
+        logger.critical("Unexpected error during file processing:")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unexpected error during file processing",
+        )
+
+    file_path = settings.FILE_STORAGE / f"{file_entry.id}.csv"
+
+    if file_path.exists():
+        logger.critical(f"File path {file_path} already exists in storage.")
+        raise HTTPException(
+            status_code=500, detail="Unexpected error during file processing"
+        )
+
+    lf.sink_csv(file_path)
 
     return file_entry
 
 
 @router.put("/files/{filename}")
 async def update_file(filename: str, file: UploadFile, db: Session = Depends(db_get)):
-    file_entry = db.exec(select(File).where(File.filename == filename)).one_or_none()
+    file_basename = Path(filename).stem
+    file_entry = db.exec(
+        select(File).where(File.filename == file_basename)
+    ).one_or_none()
     if not file_entry:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
@@ -105,7 +133,7 @@ async def update_file(filename: str, file: UploadFile, db: Session = Depends(db_
             detail="Missing file size",
         )
 
-    file_path = settings.FILE_STORAGE / filename
+    file_path = settings.FILE_STORAGE / f"{file_entry.id}.csv"
 
     lf = pl.scan_csv(file.file)
     lf.sink_csv(file_path)
