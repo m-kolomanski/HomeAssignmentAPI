@@ -4,7 +4,7 @@ from datetime import datetime
 
 class File(SQLModel, table=True):
     id: int = Field(default=None, primary_key=True)
-    filename: str
+    filename: str = Field(unique=True)
     content_type: str
     size: int
     ncol: int

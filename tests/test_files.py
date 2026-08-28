@@ -1,5 +1,6 @@
 import shutil
 import pytest
+from pathlib import Path
 from freezegun import freeze_time
 
 
@@ -21,7 +22,7 @@ def test_file_upload__ok(client, generate_csv, filename, ncol, nrow, size):
 
     assert response.status_code == 200
     assert response.json() == {
-        "filename": filename,
+        "filename": Path(filename).stem,
         "content_type": "text/csv",
         "size": size,
         "ncol": ncol,
@@ -32,9 +33,8 @@ def test_file_upload__ok(client, generate_csv, filename, ncol, nrow, size):
     }
 
 
-def test_file_upload__file_exists(file_storage, client, generate_csv):
-    test_file = generate_csv()
-    shutil.copy(test_file, file_storage)
+def test_file_upload__file_exists(client, generate_csv):
+    test_file = generate_csv(insert=True)
 
     with open(test_file, "rb") as f:
         response = client.post(
@@ -64,19 +64,21 @@ def test_file_upload__invalid_mime(client, generate_csv):
     ],
 )
 def test_file_list(file_storage, client, generate_csv, filenames):
+    expected_file_names = [Path(f).stem for f in filenames]
+
     for file in filenames:
         test_file = generate_csv(file)
         shutil.copy(test_file, file_storage)
 
     response = client.get("/files")
     assert response.status_code == 200
-    assert response.json().sort() == filenames.sort()
+    assert response.json().sort() == expected_file_names.sort()
 
 
 def test_get_file__ok(client, generate_csv):
     generate_csv(insert=True)
 
-    response = client.get("/files/test_file.csv")
+    response = client.get("/files/test_file")
 
     assert response.status_code == 200
     assert (
@@ -86,7 +88,7 @@ def test_get_file__ok(client, generate_csv):
 
 
 def test_get_file__missing(client):
-    response = client.get("/files/nonexistent_file.csv")
+    response = client.get("/files/nonexistent_file")
 
     assert response.status_code == 404
 
@@ -99,12 +101,12 @@ def test_update_file__ok(client, generate_csv):
 
     with open(test_file, "rb") as f:
         response = client.put(
-            "/files/test_file.csv", files={"file": ("test_file.csv", f, "text/csv")}
+            "/files/test_file", files={"file": ("test_file.csv", f, "text/csv")}
         )
 
     assert response.status_code == 200
     assert response.json() == {
-        "filename": "test_file.csv",
+        "filename": "test_file",
         "content_type": "text/csv",
         "size": 69,
         "ncol": 5,
@@ -120,7 +122,7 @@ def test_update_file__missing(client, generate_csv):
 
     with open(test_file, "rb") as f:
         response = client.put(
-            "/files/nonexistent_file.csv",
+            "/files/nonexistent_file",
             files={"file": ("test_file.csv", f, "text/csv")},
         )
 
