@@ -93,7 +93,7 @@ async def upload_files(file: UploadFile, db: Session = Depends(db_get)):
                 status_code=status.HTTP_409_CONFLICT, detail="File already exists"
             )
 
-        logger.critical("Unexpected error during file processing:")
+        logger.critical("Unexpected error during file processing:", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unexpected error during file processing",
