@@ -2,7 +2,7 @@ from backend.files.loaders.base import FileLoader
 from backend.files.loaders.csv import CsvFileLoader
 from fastapi import UploadFile, HTTPException, status
 
-__all__ = ["FileLoader", "CsvFileLoader", "get_file_loader"]
+__all__ = ["FileLoader", "get_file_loader"]
 
 _LOADERS: dict[str, type[FileLoader]] = {"text/csv": CsvFileLoader}
 
