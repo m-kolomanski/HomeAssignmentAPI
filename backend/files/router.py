@@ -1,21 +1,20 @@
 from fastapi import APIRouter, HTTPException, status, Depends
-from fastapi.responses import FileResponse
+from fastapi.responses import StreamingResponse
 from sqlmodel import Session, select
 from sqlalchemy.exc import IntegrityError
 import polars as pl
 from datetime import datetime
-from pathlib import Path
+from io import BytesIO
 import logging
 
 from backend.database import db_get
 from backend.files.loaders import FileLoader, get_file_loader
+from backend.files.storage import FileStorage, get_file_storage
 from backend.files.models import File
 from backend.files.schemas import FileMetadataResponse
 
 from backend.tags.models import Tag
 from backend.file_tags.models import FileTag
-
-from backend.config import settings
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["files"])
@@ -41,22 +40,29 @@ async def get_files(db: Session = Depends(db_get)):
 
 
 @router.get("/files/{filename}")
-async def get_file(filename: str, db: Session = Depends(db_get)):
-    file_basename = Path(filename).stem
-    file_entry = db.exec(
-        select(File).where(File.filename == file_basename)
-    ).one_or_none()
+async def get_file(
+    filename: str,
+    db: Session = Depends(db_get),
+    storage: FileStorage = Depends(get_file_storage),
+):
+    file_entry = db.exec(select(File).where(File.filename == filename)).one_or_none()
     if not file_entry:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
-    file_path = settings.FILE_STORAGE / f"{file_entry.id}.csv"
+    lf = storage.read(file_entry.id)
 
-    return FileResponse(file_path)
+    buf = BytesIO()
+    lf.sink_csv(buf)
+    buf.seek(0)
+
+    return StreamingResponse(buf, media_type="text/csv")
 
 
 @router.post("/files")
 async def upload_files(
-    db: Session = Depends(db_get), loader: FileLoader = Depends(get_file_loader)
+    db: Session = Depends(db_get),
+    loader: FileLoader = Depends(get_file_loader),
+    storage: FileStorage = Depends(get_file_storage),
 ):
     lf = loader.load()
 
@@ -88,15 +94,7 @@ async def upload_files(
             detail="Unexpected error during file processing",
         )
 
-    file_path = settings.FILE_STORAGE / f"{file_entry.id}.csv"
-
-    if file_path.exists():
-        logger.critical(f"File path {file_path} already exists in storage.")
-        raise HTTPException(
-            status_code=500, detail="Unexpected error during file processing"
-        )
-
-    lf.sink_csv(file_path)
+    storage.write(file_entry.id, lf)
 
     return file_entry
 
@@ -106,15 +104,14 @@ async def update_file(
     filename: str,
     db: Session = Depends(db_get),
     loader: FileLoader = Depends(get_file_loader),
+    storage: FileStorage = Depends(get_file_storage),
 ):
     file_entry = db.exec(select(File).where(File.filename == filename)).one_or_none()
     if not file_entry:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
-    file_path = settings.FILE_STORAGE / f"{file_entry.id}.csv"
-
     lf = loader.load()
-    lf.sink_csv(file_path)
+    storage.write(file_entry.id, lf, overwrite=True)
 
     file_entry.content_type = loader.content_type
     file_entry.size = loader.size

@@ -83,7 +83,7 @@ def test_get_file__ok(client, generate_csv):
     assert response.status_code == 200
     assert (
         response.text
-        == "col-0,col-1,col-2\nval-0-0,val-0-1,val-0-2\nval-1-0,val-1-1,val-1-2"
+        == "col-0,col-1,col-2\nval-0-0,val-0-1,val-0-2\nval-1-0,val-1-1,val-1-2\n"
     )
 
 
