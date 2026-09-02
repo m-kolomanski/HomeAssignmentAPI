@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from polars import LazyFrame, scan_csv
+from polars import LazyFrame, scan_parquet
 
 
 from backend.files.storage.base import FileStorage
@@ -8,13 +8,13 @@ from backend.files.storage.base import FileStorage
 logger = logging.getLogger(__name__)
 
 
-class CsvFileStorage(FileStorage):
+class ParquetFileStorage(FileStorage):
     @property
     def extension(self) -> str:
-        return "csv"
+        return "parquet"
 
     def sink(self, lf: LazyFrame, file_path: Path) -> None:
-        lf.sink_csv(file_path)
+        lf.sink_parquet(file_path)
 
     def scan(self, file_path: Path) -> LazyFrame:
-        return scan_csv(file_path)
+        return scan_parquet(file_path)
