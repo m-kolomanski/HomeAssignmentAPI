@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 class Settings(BaseSettings):
     FILE_STORAGE: Path = Field(alias="FILE_STORAGE", default=Path("./userfiles"))
-    FILE_STORAGE_FORMAT: Literal["csv"] = Field(default="csv")
+    FILE_STORAGE_FORMAT: Literal["csv", "parquet"] = Field(default="csv")
     DB_PATH: Path = Field(alias="DB_PATH", default=Path("./app.db"))
     HAAPI_LOG_LEVEL: str = Field(default="INFO")
     HAAPI_LOG_FILE_PATH: str = Field(default="./log/log.jsonl")

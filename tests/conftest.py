@@ -3,6 +3,8 @@ from fastapi.testclient import TestClient
 from backend.main import app
 from backend.database import db_get
 from backend.files.models import File
+from backend.files.storage import get_file_storage
+from backend.files.storage.csv import CsvFileStorage
 from pathlib import Path
 from sqlalchemy.pool import StaticPool
 from sqlmodel import Session, SQLModel, create_engine
@@ -24,11 +26,12 @@ def db_session():
 
 
 @pytest.fixture
-def client(db_session):
+def client(db_session, file_storage):
     def _db_get():
         yield db_session
 
     app.dependency_overrides[db_get] = _db_get
+    app.dependency_overrides[get_file_storage] = lambda: CsvFileStorage(file_storage)
 
     with TestClient(app) as test_client:
         yield test_client
