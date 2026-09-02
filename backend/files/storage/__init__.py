@@ -8,7 +8,7 @@ __all__ = ["FileStorage", "get_file_storage"]
 
 _STORAGES: dict[str, type[FileStorage]] = {
     "csv": CsvFileStorage,
-    "parquet": ParquetFileStorage
+    "parquet": ParquetFileStorage,
 }
 
 
