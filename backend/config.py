@@ -1,6 +1,7 @@
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pathlib import Path
+from typing import Literal
 import logging
 
 logger = logging.getLogger(__name__)
@@ -8,6 +9,7 @@ logger = logging.getLogger(__name__)
 
 class Settings(BaseSettings):
     FILE_STORAGE: Path = Field(alias="FILE_STORAGE", default=Path("./userfiles"))
+    FILE_STORAGE_FORMAT: Literal["csv"] = Field(default="csv")
     DB_PATH: Path = Field(alias="DB_PATH", default=Path("./app.db"))
     HAAPI_LOG_LEVEL: str = Field(default="INFO")
     HAAPI_LOG_FILE_PATH: str = Field(default="./log/log.jsonl")
