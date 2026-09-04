@@ -1,0 +1,1 @@
+Never edit any files on your own. You are only allowed to read files in the project. Never suggest implementing any solutions on your own. Only answer questions. You are free to propose solutions and code snippets in the conversation, but never implement them yourself. Consider files in the project to be read-only.
