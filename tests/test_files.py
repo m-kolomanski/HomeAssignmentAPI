@@ -33,17 +33,6 @@ def test_file_upload__ok(client, generate_csv, filename, ncol, nrow, size):
     }
 
 
-def test_file_upload__file_exists(client, generate_csv):
-    test_file = generate_csv(insert=True)
-
-    with open(test_file, "rb") as f:
-        response = client.post(
-            "/files", files={"file": ("test_file.csv", f, "text/csv")}
-        )
-
-    assert response.status_code == 409
-
-
 def test_file_upload__invalid_mime(client, generate_csv):
     test_file = generate_csv()
 
@@ -78,7 +67,7 @@ def test_file_list(file_storage, client, generate_csv, filenames):
 def test_get_file__ok(client, generate_csv):
     generate_csv(insert=True)
 
-    response = client.get("/files/test_file")
+    response = client.get("/files/1")
 
     assert response.status_code == 200
     assert (
@@ -88,7 +77,7 @@ def test_get_file__ok(client, generate_csv):
 
 
 def test_get_file__missing(client):
-    response = client.get("/files/nonexistent_file")
+    response = client.get("/files/404")
 
     assert response.status_code == 404
 
@@ -101,7 +90,7 @@ def test_update_file__ok(client, generate_csv):
 
     with open(test_file, "rb") as f:
         response = client.put(
-            "/files/test_file", files={"file": ("test_file.csv", f, "text/csv")}
+            "/files/1", files={"file": ("test_file.csv", f, "text/csv")}
         )
 
     assert response.status_code == 200
@@ -122,7 +111,7 @@ def test_update_file__missing(client, generate_csv):
 
     with open(test_file, "rb") as f:
         response = client.put(
-            "/files/nonexistent_file",
+            "/files/404",
             files={"file": ("test_file.csv", f, "text/csv")},
         )
 

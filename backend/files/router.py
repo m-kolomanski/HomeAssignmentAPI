@@ -39,17 +39,19 @@ async def get_files(db: Session = Depends(db_get)):
     return list(result.values())
 
 
-@router.get("/files/{filename}")
+@router.get("/files/{file_id}")
 async def get_file(
-    filename: str,
+    file_id: int,
     db: Session = Depends(db_get),
     storage: FileStorage = Depends(get_file_storage),
 ):
-    file_entry = db.exec(select(File).where(File.filename == filename)).one_or_none()
-    if not file_entry:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-
-    lf = storage.read(file_entry.id)
+    try:
+        lf = storage.read(file_id)
+    except FileNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"File with ID {file_id} not found",
+        )
 
     buf = BytesIO()
     lf.sink_csv(buf)
@@ -80,13 +82,8 @@ async def upload_files(
         db.add(file_entry)
         db.commit()
         db.refresh(file_entry)
-    except IntegrityError as err:
+    except IntegrityError:
         db.rollback()
-
-        if "UNIQUE constraint failed" in str(err.orig):
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT, detail="File already exists"
-            )
 
         logger.critical("Unexpected error during file processing:", exc_info=True)
         raise HTTPException(
@@ -99,19 +96,26 @@ async def upload_files(
     return file_entry
 
 
-@router.put("/files/{filename}")
+@router.put("/files/{file_id}")
 async def update_file(
-    filename: str,
+    file_id: int,
     db: Session = Depends(db_get),
     loader: FileLoader = Depends(get_file_loader),
     storage: FileStorage = Depends(get_file_storage),
 ):
-    file_entry = db.exec(select(File).where(File.filename == filename)).one_or_none()
+    file_entry = db.exec(select(File).where(File.id == file_id)).one_or_none()
     if not file_entry:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
     lf = loader.load()
-    storage.write(file_entry.id, lf, overwrite=True)
+
+    try:
+        storage.write(file_entry.id, lf, overwrite=True)
+    except FileNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"File with ID {file_id} not found.",
+        )
 
     file_entry.content_type = loader.content_type
     file_entry.size = loader.size
@@ -119,7 +123,7 @@ async def update_file(
     file_entry.nrow = lf.select(pl.len()).collect().item()
     file_entry.updated_at = datetime.now()
 
-    logger.info("Updating file: %s", filename)
+    logger.info("Updating file: %s", file_entry.filename)
 
     db.add(file_entry)
     db.commit()
