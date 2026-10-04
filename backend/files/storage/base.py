@@ -21,7 +21,10 @@ class FileStorage(ABC):
     def write(self, file_id: int, lf: LazyFrame, overwrite: bool = False) -> Path:
         file_path = self.get_path(file_id)
 
-        if overwrite and file_path.exists():
+        if overwrite:
+            if not file_path.exists():
+                raise FileNotFoundError(f"File id {file_id} does not exist.")
+
             logger.info(f"Removing stale file {file_path}")
             file_path.unlink()
 
@@ -40,6 +43,8 @@ class FileStorage(ABC):
 
     def read(self, file_id: int) -> LazyFrame:
         file_path = self.get_path(file_id)
+        if not file_path.exists():
+            raise FileNotFoundError(f"File id {file_id} does not exist")
         return self.scan(file_path)
 
     @abstractmethod

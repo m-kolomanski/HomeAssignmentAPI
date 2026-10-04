@@ -11,13 +11,14 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["files"])
 
 
-@router.get("/files/{filename}/tags")
-async def get_file_tags(filename: str, db: Session = Depends(db_get)):
-    file_entry = db.exec(select(File).where(File.filename == filename)).one_or_none()
+@router.get("/files/{file_id}/tags")
+async def get_file_tags(file_id: int, db: Session = Depends(db_get)):
+    file_entry = db.exec(select(File).where(File.id == file_id)).one_or_none()
 
     if file_entry is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"File '{filename}' not found"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"File with ID '{file_id}' not found",
         )
 
     file_tags = db.exec(
@@ -29,13 +30,14 @@ async def get_file_tags(filename: str, db: Session = Depends(db_get)):
     return file_tags
 
 
-@router.post("/files/{filename}/tags")
-async def tag_file(filename: str, tag_name: str, db: Session = Depends(db_get)):
-    file_entry = db.exec(select(File).where(File.filename == filename)).one_or_none()
+@router.post("/files/{file_id}/tags")
+async def tag_file(file_id: int, tag_name: str, db: Session = Depends(db_get)):
+    file_entry = db.exec(select(File).where(File.id == file_id)).one_or_none()
 
     if file_entry is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"File '{filename}' not found"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"File with ID '{file_id}' not found",
         )
 
     tag_entry = db.exec(select(Tag).where(Tag.name == tag_name)).one_or_none()
@@ -54,12 +56,12 @@ async def tag_file(filename: str, tag_name: str, db: Session = Depends(db_get)):
     if file_already_tagged:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=f"File '{filename}' already has '{tag_name}' tag",
+            detail=f"File '{file_id}' already has '{tag_name}' tag",
         )
 
     file_tag_entry = FileTag(file_id=file_entry.id, tag_id=tag_entry.id)
 
-    logger.info("Adding new tag: %s to file: %s", tag_name, filename)
+    logger.info("Adding new tag: %s to file: %s", tag_name, file_id)
 
     db.add(file_tag_entry)
     db.commit()
@@ -68,13 +70,14 @@ async def tag_file(filename: str, tag_name: str, db: Session = Depends(db_get)):
     return file_tag_entry
 
 
-@router.delete("/files/{filename}/tags")
-async def untag_file(filename: str, tag_name: str, db: Session = Depends(db_get)):
-    file_entry = db.exec(select(File).where(File.filename == filename)).one_or_none()
+@router.delete("/files/{file_id}/tags")
+async def untag_file(file_id: int, tag_name: str, db: Session = Depends(db_get)):
+    file_entry = db.exec(select(File).where(File.id == file_id)).one_or_none()
 
     if file_entry is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"File '{filename}' not found"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"File with ID '{file_id}' not found",
         )
 
     tag_entry = db.exec(select(Tag).where(Tag.name == tag_name)).one_or_none()
@@ -93,10 +96,10 @@ async def untag_file(filename: str, tag_name: str, db: Session = Depends(db_get)
     if not file_tag_entry:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=f"File '{filename}' does not have '{tag_name}' tag",
+            detail=f"File '{file_id}' does not have '{tag_name}' tag",
         )
 
-    logger.info("Deleting tag: %s from file: %s", tag_name, filename)
+    logger.info("Deleting tag: %s from file: %s", tag_name, file_id)
 
     db.delete(file_tag_entry)
     db.commit()
