@@ -1,6 +1,6 @@
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends, Query
 from fastapi.responses import StreamingResponse
-from sqlmodel import Session, select
+from sqlmodel import Session, select, col, func
 from sqlalchemy.exc import IntegrityError
 import polars as pl
 from datetime import datetime
@@ -21,12 +21,32 @@ router = APIRouter(tags=["files"])
 
 
 @router.get("/files")
-async def get_files(db: Session = Depends(db_get)):
-    files_with_tags = db.exec(
+async def get_files(
+    db: Session = Depends(db_get),
+    name: str | None = None,
+    tags: list[str] | None = Query(None),
+):
+    db_query = (
         select(File, Tag.name)
         .join(FileTag, FileTag.file_id == File.id, isouter=True)  # type: ignore[arg-type]
         .join(Tag, Tag.id == FileTag.tag_id, isouter=True)  # type: ignore[arg-type]
-    ).all()
+    )
+
+    if name is not None:
+        db_query = db_query.where(col(File.filename).icontains(name, autoescape=True))
+
+    if tags is not None:
+        searched_tags = set(tags)
+        matching_ids = (
+            select(FileTag.file_id)
+            .join(Tag, col(Tag.id) == col(FileTag.tag_id))
+            .where(col(Tag.name).in_(searched_tags))
+            .group_by(col(FileTag.file_id))
+            .having(func.count(func.distinct(col(Tag.id))) == len(searched_tags))
+        )
+        db_query = db_query.where(col(File.id).in_(matching_ids))
+
+    files_with_tags = db.exec(db_query).all()
 
     result: dict[int, FileMetadataResponse] = {}
 
@@ -42,7 +62,6 @@ async def get_files(db: Session = Depends(db_get)):
 @router.get("/files/{file_id}")
 async def get_file(
     file_id: int,
-    db: Session = Depends(db_get),
     storage: FileStorage = Depends(get_file_storage),
 ):
     try:
