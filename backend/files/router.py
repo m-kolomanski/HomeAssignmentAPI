@@ -1,30 +1,52 @@
-from fastapi import APIRouter, UploadFile, HTTPException, status, Depends
-from fastapi.responses import FileResponse
-from sqlmodel import Session, select
+from fastapi import APIRouter, HTTPException, status, Depends, Query
+from fastapi.responses import StreamingResponse
+from sqlmodel import Session, select, col, func
+from sqlalchemy.exc import IntegrityError
 import polars as pl
 from datetime import datetime
+from io import BytesIO
 import logging
 
 from backend.database import db_get
+from backend.files.loaders import FileLoader, get_file_loader
+from backend.files.storage import FileStorage, get_file_storage
 from backend.files.models import File
 from backend.files.schemas import FileMetadataResponse
 
 from backend.tags.models import Tag
 from backend.file_tags.models import FileTag
 
-from backend.config import settings
-
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["files"])
 
 
 @router.get("/files")
-async def get_files(db: Session = Depends(db_get)):
-    files_with_tags = db.exec(
+async def get_files(
+    db: Session = Depends(db_get),
+    name: str | None = None,
+    tags: list[str] | None = Query(None),
+):
+    db_query = (
         select(File, Tag.name)
         .join(FileTag, FileTag.file_id == File.id, isouter=True)  # type: ignore[arg-type]
         .join(Tag, Tag.id == FileTag.tag_id, isouter=True)  # type: ignore[arg-type]
-    ).all()
+    )
+
+    if name is not None:
+        db_query = db_query.where(col(File.filename).icontains(name, autoescape=True))
+
+    if tags is not None:
+        searched_tags = set(tags)
+        matching_ids = (
+            select(FileTag.file_id)
+            .join(Tag, col(Tag.id) == col(FileTag.tag_id))
+            .where(col(Tag.name).in_(searched_tags))
+            .group_by(col(FileTag.file_id))
+            .having(func.count(func.distinct(col(Tag.id))) == len(searched_tags))
+        )
+        db_query = db_query.where(col(File.id).in_(matching_ids))
+
+    files_with_tags = db.exec(db_query).all()
 
     result: dict[int, FileMetadataResponse] = {}
 
@@ -37,86 +59,90 @@ async def get_files(db: Session = Depends(db_get)):
     return list(result.values())
 
 
-@router.get("/files/{filename}")
-async def get_file(filename: str, db: Session = Depends(db_get)):
-    file_entry = db.exec(select(File).where(File.filename == filename)).one_or_none()
-    if not file_entry:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+@router.get("/files/{file_id}")
+async def get_file(
+    file_id: int,
+    storage: FileStorage = Depends(get_file_storage),
+):
+    try:
+        lf = storage.read(file_id)
+    except FileNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"File with ID {file_id} not found",
+        )
 
-    file_path = settings.FILE_STORAGE / filename
+    buf = BytesIO()
+    lf.sink_csv(buf)
+    buf.seek(0)
 
-    return FileResponse(file_path)
+    return StreamingResponse(buf, media_type="text/csv")
 
 
 @router.post("/files")
-async def upload_files(file: UploadFile, db: Session = Depends(db_get)):
-    if file.content_type != "text/csv":
-        raise HTTPException(
-            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-            detail="Invalid file type",
-        )
-
-    if not file.filename:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Filename is required",
-        )
-
-    file_path = settings.FILE_STORAGE / file.filename
-
-    if file_path.exists():
-        raise HTTPException(status_code=409, detail="File already exists")
-
-    lf = pl.scan_csv(file.file)
-    lf.sink_csv(file_path)
+async def upload_files(
+    db: Session = Depends(db_get),
+    loader: FileLoader = Depends(get_file_loader),
+    storage: FileStorage = Depends(get_file_storage),
+):
+    lf = loader.load()
 
     file_entry = File(
-        filename=file.filename,
-        content_type=file.content_type,
-        size=file.size,
+        filename=loader.basename,
+        content_type=loader.content_type,
+        size=loader.size,
         ncol=len(lf.collect_schema().names()),
         nrow=lf.select(pl.len()).collect().item(),
     )
 
     logger.info("Adding file: %s", file_entry.filename)
 
-    db.add(file_entry)
-    db.commit()
-    db.refresh(file_entry)
+    try:
+        db.add(file_entry)
+        db.commit()
+        db.refresh(file_entry)
+    except IntegrityError:
+        db.rollback()
+
+        logger.critical("Unexpected error during file processing:", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unexpected error during file processing",
+        )
+
+    storage.write(file_entry.id, lf)
 
     return file_entry
 
 
-@router.put("/files/{filename}")
-async def update_file(filename: str, file: UploadFile, db: Session = Depends(db_get)):
-    file_entry = db.exec(select(File).where(File.filename == filename)).one_or_none()
+@router.put("/files/{file_id}")
+async def update_file(
+    file_id: int,
+    db: Session = Depends(db_get),
+    loader: FileLoader = Depends(get_file_loader),
+    storage: FileStorage = Depends(get_file_storage),
+):
+    file_entry = db.exec(select(File).where(File.id == file_id)).one_or_none()
     if not file_entry:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
-    if not file.content_type:
+    lf = loader.load()
+
+    try:
+        storage.write(file_entry.id, lf, overwrite=True)
+    except FileNotFoundError:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Missing content type",
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"File with ID {file_id} not found.",
         )
 
-    if not file.size:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail="Missing file size",
-        )
-
-    file_path = settings.FILE_STORAGE / filename
-
-    lf = pl.scan_csv(file.file)
-    lf.sink_csv(file_path)
-
-    file_entry.content_type = file.content_type
-    file_entry.size = file.size
+    file_entry.content_type = loader.content_type
+    file_entry.size = loader.size
     file_entry.ncol = len(lf.collect_schema().names())
     file_entry.nrow = lf.select(pl.len()).collect().item()
     file_entry.updated_at = datetime.now()
 
-    logger.info("Updating file: %s", filename)
+    logger.info("Updating file: %s", file_entry.filename)
 
     db.add(file_entry)
     db.commit()

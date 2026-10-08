@@ -152,6 +152,8 @@ venv.bak/
 .spyderproject
 .spyproject
 
+/log/*
+
 # Rope project settings
 .ropeproject
 
