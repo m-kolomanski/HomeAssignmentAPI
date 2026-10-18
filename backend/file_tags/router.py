@@ -13,7 +13,7 @@ router = APIRouter(tags=["files"])
 
 @router.get("/files/{file_id}/tags")
 async def get_file_tags(file_id: int, db: Session = Depends(db_get)):
-    file_entry = db.exec(select(File).where(File.id == file_id)).one_or_none()
+    file_entry = db.get(File, file_id)
 
     if file_entry is None:
         raise HTTPException(
@@ -32,8 +32,7 @@ async def get_file_tags(file_id: int, db: Session = Depends(db_get)):
 
 @router.post("/files/{file_id}/tags")
 async def tag_file(file_id: int, tag_name: str, db: Session = Depends(db_get)):
-    file_entry = db.exec(select(File).where(File.id == file_id)).one_or_none()
-
+    file_entry = db.get(File, file_id)
     if file_entry is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -72,7 +71,7 @@ async def tag_file(file_id: int, tag_name: str, db: Session = Depends(db_get)):
 
 @router.delete("/files/{file_id}/tags")
 async def untag_file(file_id: int, tag_name: str, db: Session = Depends(db_get)):
-    file_entry = db.exec(select(File).where(File.id == file_id)).one_or_none()
+    file_entry = db.get(File, file_id)
 
     if file_entry is None:
         raise HTTPException(
