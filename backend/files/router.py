@@ -21,7 +21,7 @@ router = APIRouter(tags=["files"])
 
 
 @router.get("/files")
-async def get_files(
+async def list_files(
     db: Session = Depends(db_get),
     name: str | None = None,
     tags: list[str] | None = Query(None),
