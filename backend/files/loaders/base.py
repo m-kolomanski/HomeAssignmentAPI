@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
-from fastapi import HTTPException, UploadFile, status
+from fastapi import UploadFile
 from pathlib import Path
 import polars as pl
+
+from backend.exceptions import UnprocessableContentException
 
 
 class FileLoader(ABC):
@@ -13,22 +15,13 @@ class FileLoader(ABC):
 
     def __init__(self, upload_file: UploadFile):
         if upload_file.filename is None:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-                detail="File name is missing",
-            )
+            raise UnprocessableContentException("File name is missing")
 
         if upload_file.content_type is None:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-                detail="Content-type is missing",
-            )
+            raise UnprocessableContentException("Content-type is missing")
 
         if upload_file.size is None:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-                detail="File size is missing",
-            )
+            raise UnprocessableContentException("File size is missing")
 
         self.filename = upload_file.filename
         self.basename = Path(upload_file.filename).stem

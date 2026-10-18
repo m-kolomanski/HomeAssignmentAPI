@@ -64,13 +64,7 @@ async def get_file(
     file_id: int,
     storage: FileStorage = Depends(get_file_storage),
 ):
-    try:
-        lf = storage.read(file_id)
-    except FileNotFoundError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"File with ID {file_id} not found",
-        )
+    lf = storage.read(file_id)
 
     buf = BytesIO()
     lf.sink_csv(buf)
@@ -128,13 +122,7 @@ async def update_file(
 
     lf = loader.load()
 
-    try:
-        storage.write(file_entry.id, lf, overwrite=True)
-    except FileNotFoundError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"File with ID {file_id} not found.",
-        )
+    storage.write(file_entry.id, lf, overwrite=True)
 
     file_entry.content_type = loader.content_type
     file_entry.size = loader.size
