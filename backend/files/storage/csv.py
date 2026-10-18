@@ -13,8 +13,8 @@ class CsvFileStorage(FileStorage):
     def extension(self) -> str:
         return "csv"
 
-    def sink(self, lf: LazyFrame, file_path: Path) -> None:
+    def _sink(self, lf: LazyFrame, file_path: Path) -> None:
         lf.sink_csv(file_path)
 
-    def scan(self, file_path: Path) -> LazyFrame:
+    def _scan(self, file_path: Path) -> LazyFrame:
         return scan_csv(file_path)
