@@ -3,6 +3,8 @@ from fastapi.testclient import TestClient
 from backend.main import app
 from backend.database import db_get
 from backend.files.models import File
+from backend.files.storage import get_file_storage
+from backend.files.storage.csv import CsvFileStorage
 from pathlib import Path
 from sqlalchemy.pool import StaticPool
 from sqlmodel import Session, SQLModel, create_engine
@@ -24,11 +26,12 @@ def db_session():
 
 
 @pytest.fixture
-def client(db_session):
+def client(db_session, file_storage):
     def _db_get():
         yield db_session
 
     app.dependency_overrides[db_get] = _db_get
+    app.dependency_overrides[get_file_storage] = lambda: CsvFileStorage(file_storage)
 
     with TestClient(app) as test_client:
         yield test_client
@@ -64,19 +67,17 @@ def generate_csv(tmp_path, file_storage, db_session):
         # Write CSV file to temp path
         # If insert == True, write directly to file storage to simulate file being present in the database
         if insert:
-            csv_path = file_storage / name
-
-            db_session.add(
-                File(
-                    filename=name,
-                    content_type="text/csv",
-                    size=len(csv_text),
-                    ncol=cols,
-                    nrow=rows,
-                )
+            file_entry = File(
+                filename=Path(name).stem,
+                content_type="text/csv",
+                size=len(csv_text),
+                ncol=cols,
+                nrow=rows,
             )
+            db_session.add(file_entry)
             db_session.commit()
 
+            csv_path = file_storage / f"{file_entry.id}.csv"
         else:
             csv_path = tmp_path / "input" / name
             csv_path.parent.mkdir(exist_ok=True)
