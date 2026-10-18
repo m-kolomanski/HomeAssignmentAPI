@@ -122,7 +122,7 @@ async def update_file(
     loader: FileLoader = Depends(get_file_loader),
     storage: FileStorage = Depends(get_file_storage),
 ):
-    file_entry = db.exec(select(File).where(File.id == file_id)).one_or_none()
+    file_entry = db.get(File, file_id)
     if not file_entry:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
