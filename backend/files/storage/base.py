@@ -35,17 +35,17 @@ class FileStorage(ABC):
                 detail="Unexpected error during file processing",
             )
 
-        self.sink(lf, file_path)
+        self._sink(lf, file_path)
         return file_path
 
     @abstractmethod
-    def sink(self, lf: LazyFrame, file_path: Path) -> None: ...
+    def _sink(self, lf: LazyFrame, file_path: Path) -> None: ...
 
     def read(self, file_id: int) -> LazyFrame:
         file_path = self.get_path(file_id)
         if not file_path.exists():
             raise FileNotFoundError(f"File id {file_id} does not exist")
-        return self.scan(file_path)
+        return self._scan(file_path)
 
     @abstractmethod
-    def scan(self, file_path: Path) -> LazyFrame: ...
+    def _scan(self, file_path: Path) -> LazyFrame: ...

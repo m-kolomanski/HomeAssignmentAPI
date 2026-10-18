@@ -13,8 +13,8 @@ class ParquetFileStorage(FileStorage):
     def extension(self) -> str:
         return "parquet"
 
-    def sink(self, lf: LazyFrame, file_path: Path) -> None:
+    def _sink(self, lf: LazyFrame, file_path: Path) -> None:
         lf.sink_parquet(file_path)
 
-    def scan(self, file_path: Path) -> LazyFrame:
+    def _scan(self, file_path: Path) -> LazyFrame:
         return scan_parquet(file_path)
